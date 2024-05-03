@@ -1,6 +1,7 @@
 using SpiDy
 using Statistics
 using Distributions
+using DifferentialEquations
 using ProgressBars
 using NPZ
 
@@ -12,7 +13,7 @@ J = LorentzianSD(0.3^2, 0.5, 0.8)
 ω0 = 1
 
 # T = LinRange(0.0, 1.0, 10)
-T = 0.2
+T = 0*(0.5/9)
 T_c = T
 T_h = 10*T
 
@@ -22,7 +23,7 @@ JH = Nchain(nosc, κ)
 
 ### SpiDy paratmeters ###
 matrix = IsoCoupling(1.);
-ntraj = 10000
+ntraj = 5000
 σ0 = 0.5
 
 Δt = 0.1
@@ -73,40 +74,14 @@ for n in eachindex(T)
             g_traj[2, :, i, n] = b_traj[2, :, i, n] + v_traj[2, :, i, n]
         end
     end
-    avg1 = Float64[]
-    cov1 = Float64[]
-    avg2 = Float64[]
-    cov2 = Float64[]
-    for m in 1:length(saveat)-1
-        n1 = m*ntraj
-        n2 = ntraj
-        n12 = n1 + n2
-        if m==1
-            avg1 = [mean(g_traj[1, m, :, n]), mean(p_traj[1, m, :, n])]
-            cov1 = cov(g_traj[1, m, :, n], p_traj[1, m, :, n])
-            ####
-            avg2 = [mean(g_traj[2, m, :, n]), mean(p_traj[2, m, :, n])]
-            cov2 = cov(g_traj[2, m, :, n], p_traj[2, m, :, n])   
-        else
-            avg1′ = [mean(g_traj[1, m+1, :, n]), mean(p_traj[1, m+1, :, n])]
-            cov1′ = cov(g_traj[1, m+1, :, n], p_traj[1, m+1, :, n])   
-            avg2′ = [mean(g_traj[2, m+1, :, n]), mean(p_traj[2, m+1, :, n])]
-            cov2′ = cov(g_traj[2, m+1, :, n], p_traj[2, m+1, :, n])   
-            ####
-            avg1 = [(n1*avg1[k] + n2*avg1′[k])/n12 for k in 1:2]
-            cov1 = (n1*cov1 + n2*cov1′ + (n1*n2/n12)*(avg1[1] - avg1′[1])*(avg1[2] - avg1′[2]))/n12
-            avg2 = [(n1*avg2[k] + n2*avg2′[k])/n12 for k in 1:2]
-            cov2 = (n1*cov2 + n2*cov2′ + (n1*n2/n12)*(avg2[1] - avg2′[1])*(avg2[2] - avg2′[2]))/n12
-        end
-    end
-    current1ss[n] = cov1
-    current2ss[n] = cov2
+    current1ss[n] = mean(g_traj[1, :, :, n].*p_traj[1, :, :, n])
+    current2ss[n] = mean(g_traj[2, :, :, n].*p_traj[2, :, :, n])
 end
 
 ########################
 ########################
 
-npzwrite("./data/q_T_sto_network_$(ntraj).npz",
+npzwrite("./data/2504/q_T_sto_network_$(ntraj)_T0_15K.npz",
     Dict("lambda^2" => J.α, 
          "omega_p" => J.ω0,
          "gamma" => J.Γ,
